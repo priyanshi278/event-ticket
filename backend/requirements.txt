@@ -8,3 +8,7 @@ requests
 pydantic-settings
 neon
 uvicorn
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt
+email-validator
