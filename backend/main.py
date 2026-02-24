@@ -1,6 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import auth, admin, organizer, customer, entry_manager, support, offers
+from database.database import engine, Base
+import models 
+
+# Create tables
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Event Ticket Booking Platform API",
