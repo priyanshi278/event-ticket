@@ -8,28 +8,19 @@ def get_auth_headers():
         return {"Authorization": f"Bearer {st.session_state.token}"}
     return {}
 
-def safe_json(response):
-    """Safely decode JSON response, handling non-JSON content gracefully."""
-    try:
-        if "application/json" in response.headers.get("Content-Type", ""):
-            return response.json()
-        return {"detail": f"Backend returned non-JSON response (Status: {response.status_code})"}
-    except Exception:
-        return {"detail": "Failed to decode JSON from backend"}
-
 # AUTH
 def login(email, password):
     try:
         response = requests.post(f"{BASE_URL}/auth/login", json={"email": email, "password": password})
-        data = safe_json(response)
         if response.status_code == 200:
-            st.session_state.token = data.get("access_token")
-            st.session_state.user_role = data.get("role")
+            data = response.json()
+            st.session_state.token = data["access_token"]
+            st.session_state.user_role = data["role"]
             st.session_state.user_email = email
             return True, "Login successful"
-        return False, data.get("detail", "Login failed")
+        return False, response.json().get("detail", "Login failed")
     except Exception as e:
-        return False, f"Connection Error: {str(e)}"
+        return False, str(e)
 
 def signup(name, email, password, role):
     try:
@@ -39,20 +30,18 @@ def signup(name, email, password, role):
             "password": password,
             "role": role
         })
-        data = safe_json(response)
         if response.status_code == 200:
             return True, "Signup successful! Please login."
-        return False, data.get("detail", "Signup failed")
+        return False, response.json().get("detail", "Signup failed")
     except Exception as e:
-        return False, f"Connection Error: {str(e)}"
+        return False, str(e)
 
 # CUSTOMER
 def get_events():
     try:
         response = requests.get(f"{BASE_URL}/customer/events")
-        data = safe_json(response)
         if response.status_code == 200:
-            return data
+            return response.json()
         return []
     except:
         return []
@@ -60,9 +49,8 @@ def get_events():
 def get_event_seats(event_id):
     try:
         response = requests.get(f"{BASE_URL}/customer/events/{event_id}/seats")
-        data = safe_json(response)
         if response.status_code == 200:
-            return data
+            return response.json()
         return []
     except:
         return []
@@ -76,10 +64,9 @@ def place_order(event_id, seat_ids, payment_mode="Credit Card", offer_id=None):
             "payment_mode": payment_mode,
             "offer_id": offer_id
         }, headers=headers)
-        data = safe_json(response)
         if response.status_code == 200:
-            return True, data
-        return False, data.get("detail", "Order failed")
+            return True, response.json()
+        return False, response.json().get("detail", "Order failed")
     except Exception as e:
         return False, str(e)
 
@@ -90,8 +77,7 @@ def request_refund(order_id, reason):
             "order_id": order_id,
             "reason": reason
         }, headers=headers)
-        data = safe_json(response)
-        return response.status_code == 200, data
+        return response.status_code == 200, response.json()
     except:
         return False, "Connection error"
 
@@ -101,8 +87,7 @@ def raise_support_case(description):
         response = requests.post(f"{BASE_URL}/customer/support-cases", json={
             "description": description
         }, headers=headers)
-        data = safe_json(response)
-        return response.status_code == 200, data
+        return response.status_code == 200, response.json()
     except:
         return False, "Connection error"
 
@@ -113,10 +98,9 @@ def validate_ticket(ticket_code):
         response = requests.post(f"{BASE_URL}/entry/validate-ticket", json={
             "ticket_code": ticket_code
         }, headers=headers)
-        data = safe_json(response)
         if response.status_code == 200:
-            return data
-        return {"is_valid": False, "message": data.get("detail", "Validation failed")}
+            return response.json()
+        return {"is_valid": False, "message": response.json().get("detail", "Validation failed")}
     except:
         return {"is_valid": False, "message": "Connection error"}
 
@@ -125,7 +109,7 @@ def get_support_cases():
     try:
         headers = get_auth_headers()
         response = requests.get(f"{BASE_URL}/support/cases", headers=headers)
-        return safe_json(response) if response.status_code == 200 else []
+        return response.json() if response.status_code == 200 else []
     except:
         return []
 
@@ -144,7 +128,7 @@ def get_refund_requests():
     try:
         headers = get_auth_headers()
         response = requests.get(f"{BASE_URL}/support/refunds", headers=headers)
-        return safe_json(response) if response.status_code == 200 else []
+        return response.json() if response.status_code == 200 else []
     except:
         return []
 
@@ -162,9 +146,8 @@ def handle_refund_request(refund_id, status):
 def get_offers():
     try:
         response = requests.get(f"{BASE_URL}/offers/")
-        data = safe_json(response)
         if response.status_code == 200:
-            return data
+            return response.json()
         return []
     except:
         return []
